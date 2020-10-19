@@ -29,6 +29,14 @@ class DynaQ:
         self.observed_states = defaultdict(set)
 
     def do_run(self):
+        """
+        For a number of episodes:
+            do learning
+            for a number of test cycles
+                do testing
+        Keep track of cumulative sum to be used for plotting.
+        :return:
+        """
         cum_reward = 0
         for i in range(self.episodes):
             self.do_learning()
@@ -41,11 +49,17 @@ class DynaQ:
         print(self.q_dict)
 
     def do_learning(self):
+        """
+        Learn in two stages:
+            Q-learning, take actions in actual environment, update q value dictionary.
+            Q-planning, take actions in modeled environment, update q value dictionary.
+        :return:
+        """
         for i in range(self.learning_episodes):
             # Reset will reset the environment to its initial configuration and return that state.
             current_state = self.env.reset()
-
             done = False
+
             while not done:
                 # Q-learning
                 action = self.epsilon_greedy(current_state)
@@ -61,12 +75,18 @@ class DynaQ:
                 # Q-Planning
                 self.do_planning()
 
+                # add observed state and action, update current state
                 self.observed_states[current_state].add(action)
                 current_state = next_state
 
         self.env.close()
 
     def do_planning(self):
+        """
+        Use model to simulate taking actions at different states.
+        Update q value dictionary accordingly.
+        :return: None
+        """
         if len(self.observed_states) > 0:
             for j in range(self.planning_steps):
                 s = choice(list(self.observed_states.keys()))
@@ -76,6 +96,11 @@ class DynaQ:
                 self.q_update(s, s_prime, a, r)
 
     def do_test(self):
+        """
+        Run one-off test with current q value dictionary
+        At each step, pick the move with the best q value.
+        :return: reward (int)
+        """
         # Reset will reset the environment to its initial configuration and return that state.
         current_state = self.env.reset()
         reward = 0
@@ -88,11 +113,25 @@ class DynaQ:
         return reward
 
     def q_update(self, s, s_prime, action, reward):
+        """
+        Update q dictionary.
+        :param s: past state
+        :param s_prime: resulting state
+        :param action: action taken at past state to reach resulting state
+        :param reward: reward at resulting state
+        :return: None
+        """
         old_val = self.q_dict[s][action]
         best_future_val = np.max(self.q_dict[s_prime])
         self.q_dict[s][action] = old_val + self.alpha * (reward + self.gamma * best_future_val - old_val)
 
     def epsilon_greedy(self, state):
+        """
+        Generate random number and compare it to epsilon. If the number is less than epsilon, do random action.
+        Else, do best action.
+        :param state:
+        :return: action (int)
+        """
         chance = uniform(0, 1)
         if chance < self.epsilon:
             return self.env.action_space.sample()
