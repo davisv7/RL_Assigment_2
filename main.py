@@ -34,7 +34,7 @@ class DynaQ:
             do learning
             for a number of test cycles
                 do testing
-        Keep track of cumulative sum to be used for plotting.
+        Keep track of cumulative reward to be used for plotting.
         :return:
         """
         cum_reward = 0
