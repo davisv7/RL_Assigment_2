@@ -9,15 +9,15 @@ class DynaQ:
     def __init__(self, env):
         self.env = env
 
-        self.episodes = 10000
+        self.episodes = 1000
 
         self.learning_episodes = 10
-        self.planning_steps = 10
+        self.planning_steps = 100
 
         self.test_cycles = 10
 
-        self.alpha = 1
-        self.gamma = 0.1
+        self.alpha = 0.9
+        self.gamma = 0.8
         self.epsilon = 0.2
         self.action_space = list(range(self.env.action_space.n))
         self.state_space = np.array(range(16))
@@ -44,7 +44,7 @@ class DynaQ:
             for j in range(self.test_cycles):
                 _sum += self.do_test()
             cum_reward += _sum
-            print(_sum)
+            # print(_sum)
         print(cum_reward / (self.test_cycles * self.episodes))
         print(self.q_dict)
 
@@ -98,7 +98,7 @@ class DynaQ:
     def do_test(self):
         """
         Run one-off test with current q value dictionary
-        At each step, pick the move with the best q value.
+        At each step, pick the action with the best q value.
         :return: reward (int)
         """
         # Reset will reset the environment to its initial configuration and return that state.
@@ -109,6 +109,7 @@ class DynaQ:
         while not done:
             action = np.argmax(self.q_dict[current_state])
             next_state, reward, done, _ = self.env.step(action)
+            current_state = next_state
 
         return reward
 
