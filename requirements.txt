@@ -1,0 +1,5 @@
+matplotlib==3.2.1
+numpy==1.17.2
+ipython==7.18.1
+JSAnimation==0.1
+gym==0.17.3
