@@ -13,13 +13,14 @@ class DynaQ:
         self.episodes = 100000
         self.episode = 0
 
-        self.learning_episodes = 5
-        self.planning_steps = 100
+        self.learning_episodes = 1
+        self.unplanned_episodes = 1000
+        self.planning_steps = 10000
 
         self.test_cycles = 10
 
-        self.alpha = 0.9
-        self.gamma = 0.8
+        self.alpha = 0.1
+        self.gamma = 0.99
         self.action_space = list(range(self.env.action_space.n))
         self.state_space = np.array(range(16))
 
@@ -47,8 +48,9 @@ class DynaQ:
                 _sum += self.do_test()
             cum_reward += _sum
             if i % 1000 == 0:
-                print("Win Rate after {} episodes: {}%".format(self.episode ,round(cum_reward / (i * self.test_cycles + 1),4)*100))
-                print("{}".format(_sum/self.test_cycles))
+                print("Win Rate after {} episodes: {}%".format(self.episode,
+                                                               round(cum_reward / (i * self.test_cycles + 1), 4) * 100))
+
         print(cum_reward / (self.test_cycles * self.episodes))
         print(self.q_dict)
 
@@ -79,7 +81,7 @@ class DynaQ:
                 self.t_dict[current_state][action] = np.divide(self.n_dict[current_state][action], total_transitions)
 
                 # Q-Planning
-                if i > 1000:
+                if i > self.unplanned_episodes:
                     self.do_planning()
 
                 # add observed state and action, update current state
@@ -158,7 +160,8 @@ class DynaQ:
                 return max_indices.item(0)
 
     def decay_function(self):
-        return exp((-self.episode - 20000) / 20000) + 0.02
+        epsilon = exp((-self.episode - 400) / 4000) + 0.01
+        return epsilon
 
 
 def main():
