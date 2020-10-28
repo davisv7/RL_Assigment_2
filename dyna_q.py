@@ -3,32 +3,42 @@ from collections import defaultdict
 from random import uniform, choice
 import numpy as np
 from math import exp
+from results import Saver, Plotter
 
 
 class DynaQ:
 
     def __init__(self, env):
+        self.__name__ = "DynaQ"
+        # Env Params
         self.env = env
+        self.env.render()
+        self.act_size = self.env.action_space.n
+        self.action_space = list(range(self.act_size))
+        self.obs_size = self.env.observation_space.n
+        self.state_space = np.array(range(self.obs_size))
 
-        self.episodes = 100000
-        self.episode = 0
-
+        # Learning Episode Params
+        self.episodes = 100001
+        self.episode = 1
         self.learning_episodes = 1
-        self.unplanned_episodes = 1000
-        self.planning_steps = 10000
+        self.unplanned_episodes = 5000
+        self.planning_steps = 1000
+        self.testing_interval = 100
+        self.test_cycles = 100
 
-        self.test_cycles = 10
-
+        # Learning Params
         self.alpha = 0.1
         self.gamma = 0.99
-        self.action_space = list(range(self.env.action_space.n))
-        self.state_space = np.array(range(16))
-
-        self.q_dict = np.zeros((16, 4))
-        self.t_dict = np.zeros((16, 4, 16))
-        self.n_dict = np.zeros((16, 4, 16))
-        self.r_dict = np.zeros((16, 4, 16))
+        self.epsilon = self.decay_function()
+        self.q_dict = np.zeros((self.obs_size, self.act_size))
+        self.t_dict = np.zeros((self.obs_size, self.act_size, self.obs_size))
+        self.n_dict = np.zeros((self.obs_size, self.act_size, self.obs_size))
+        self.r_dict = np.zeros((self.obs_size, self.act_size, self.obs_size))
         self.observed_states = defaultdict(set)
+
+        self.filename = "{}_{}.csv".format(self.__name__, self.obs_size)
+        self.saver = Saver(self.filename)
 
     def do_run(self):
         """
@@ -40,19 +50,27 @@ class DynaQ:
         :return:
         """
         cum_reward = 0
-        for i in range(self.episodes):
+        cum_avg = 0
+        for i in range(1, self.episodes):
             self.episode = i
             self.do_learning()
             _sum = 0
-            for j in range(self.test_cycles):
-                _sum += self.do_test()
-            cum_reward += _sum
-            if i % 1000 == 0:
-                print("Win Rate after {} episodes: {}%".format(self.episode,
-                                                               round(cum_reward / (i * self.test_cycles + 1), 4) * 100))
+            if i % self.testing_interval == 0:
+                _sum = 0
+                for j in range(self.test_cycles):
+                    _sum += self.do_test()
 
-        print(cum_reward / (self.test_cycles * self.episodes))
-        print(self.q_dict)
+                _avg = _sum / self.test_cycles
+                cum_avg += _avg
+                cum_reward += _sum
+                test_rate = round(_avg * 100, 2)
+                total_rate = round(cum_avg / (self.episode // self.testing_interval) * 100, 2)
+                print("Win Rate after {} episodes: {}%".format(self.episode, test_rate))
+                print("Total Win Rate: {}%\n".format(total_rate))
+                self.saver.save([self.episode, test_rate, total_rate])
+        self.saver.close()
+        self.plotter = Plotter(self.filename)
+        self.plotter.plot()
 
     def do_learning(self):
         """
@@ -71,7 +89,7 @@ class DynaQ:
                 action = self.epsilon_greedy(current_state)
                 next_state, reward, done, _ = self.env.step(action)
 
-                terminal = True if next_state == 15 else False
+                terminal = True if next_state == self.obs_size - 1 else False
                 self.q_update(current_state, next_state, action, reward, terminal)
 
                 # Update n,r,t dictionaries
@@ -85,7 +103,7 @@ class DynaQ:
                     self.do_planning()
 
                 # add observed state and action, update current state
-                if len(self.observed_states[current_state]) != 4:
+                if len(self.observed_states[current_state]) != self.act_size:
                     self.observed_states[current_state].add(action)
                 current_state = next_state
 
@@ -103,7 +121,7 @@ class DynaQ:
                 a = choice(tuple(self.observed_states[s]))
                 s_prime = np.random.choice(self.state_space, 1, p=self.t_dict[s][a])  # <-- super slow
                 r = self.r_dict[s][a][s_prime]
-                done = True if s_prime == 15 else False
+                done = True if s_prime == self.obs_size - 1 else False
                 self.q_update(s, s_prime, a, r, done)
 
     def do_test(self):
@@ -160,12 +178,14 @@ class DynaQ:
                 return max_indices.item(0)
 
     def decay_function(self):
-        epsilon = exp((-self.episode - 400) / 4000) + 0.01
-        return epsilon
+        return exp((-self.episode - 400) / 4000) + 0.02
 
 
 def main():
-    env = gym.make('FrozenLake-v0')
+    env_name = 'FrozenLake-v0'
+    # map_name = '8x8'
+    map_name = '4x4'
+    env = gym.make(env_name, map_name=map_name)
 
     q_obj = DynaQ(env)
     q_obj.do_run()
