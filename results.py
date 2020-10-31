@@ -45,10 +45,16 @@ class Plotter:
         plt.show()
 
 
-
 def main():
-    learner_types = ["QLearner", "Sarsa", "DynaQ"]
-    board_sizes = ["16"]
+    learner_types = [
+        "QLearner",
+        "Sarsa",
+        "DynaQ"
+    ]
+    board_sizes = [
+        # "16",
+        "64"
+    ]
     dir = join(getcwd(), "results")
     for learner in learner_types:
         for size in board_sizes:
@@ -57,10 +63,12 @@ def main():
             save_path = join(dir, filename)
             df = pd.read_csv(save_path)
             x, y1, y2 = df.keys()
-            # plt.plot(x, y1, data=df, color='skyblue')
-            plt.plot(x, y2, data=df, marker='', linewidth=2,label=learner)
-    plt.xlabel = "Episodes"
-    plt.ylabel = "Rate of Success (%)"
+            # halloweenie
+            # plt.plot(x, y1, data=df, marker='', color="purple", label=f"Sample Rate")
+            plt.plot(x, y2, data=df, marker='', linewidth=2, label=f"{learner}")
+    plt.xlabel("Episodes")
+    plt.ylabel("Win Rate (%)")
+    plt.title(f"DynaQ, SARSA, and Q Performances in 8x8 Frozen Lake Environment")
     plt.legend()
     plt.show()
 

@@ -155,8 +155,8 @@ class QLearner:
 
 def main():
     env_name = 'FrozenLake-v0'
-    # map_name = '8x8'
-    map_name = '4x4'
+    map_name = '8x8'
+    # map_name = '4x4'
     env = gym.make(env_name, map_name=map_name)
 
     q_obj = QLearner(env)

@@ -23,7 +23,7 @@ class DynaQ:
         self.episode = 1
         self.learning_episodes = 1
         self.unplanned_episodes = 5000
-        self.planning_steps = 1000
+        self.planning_steps = 10000
         self.testing_interval = 100
         self.test_cycles = 100
 
@@ -37,8 +37,8 @@ class DynaQ:
         self.r_dict = np.zeros((self.obs_size, self.act_size, self.obs_size))
         self.observed_states = defaultdict(set)
 
-        self.filename = "{}_{}.csv".format(self.__name__, self.obs_size)
-        self.saver = Saver(self.filename)
+        # self.filename = "{}_{}.csv".format(self.__name__, self.obs_size)
+        # self.saver = Saver(self.filename)
 
     def do_run(self):
         """
@@ -67,10 +67,10 @@ class DynaQ:
                 total_rate = round(cum_avg / (self.episode // self.testing_interval) * 100, 2)
                 print("Win Rate after {} episodes: {}%".format(self.episode, test_rate))
                 print("Total Win Rate: {}%\n".format(total_rate))
-                self.saver.save([self.episode, test_rate, total_rate])
-        self.saver.close()
-        self.plotter = Plotter(self.filename)
-        self.plotter.plot()
+                # self.saver.save([self.episode, test_rate, total_rate])
+        # self.saver.close()
+        # self.plotter = Plotter(self.filename)
+        # self.plotter.plot()
 
     def do_learning(self):
         """
@@ -183,8 +183,8 @@ class DynaQ:
 
 def main():
     env_name = 'FrozenLake-v0'
-    # map_name = '8x8'
-    map_name = '4x4'
+    map_name = '8x8'
+    # map_name = '4x4'
     env = gym.make(env_name, map_name=map_name)
 
     q_obj = DynaQ(env)
